@@ -11,6 +11,14 @@ import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { theme } from "../../../theme";
 
+const isIOSDevice = () => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
+
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+};
+
 export default function RepositoryPage() {
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("recent");
@@ -34,7 +42,10 @@ export default function RepositoryPage() {
     if (!!mediaList?.length && q && !loadingList) {
       const browseSection = document.querySelector('[data-browse-resources]');
       if (browseSection) {
-        browseSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        browseSection.scrollIntoView({
+          behavior: isIOSDevice() ? "auto" : "smooth",
+          block: "start",
+        });
       }
     }
   }, [mediaList, q, loadingList]);
@@ -85,7 +96,7 @@ export default function RepositoryPage() {
           </main>
         </div>
       </div>
-      {isLoading && (
+      {isLoading && !mediaList?.length && (
         <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-black bg-opacity-75 text-white h-screen">
           Please wait we are loading your data
         </div>

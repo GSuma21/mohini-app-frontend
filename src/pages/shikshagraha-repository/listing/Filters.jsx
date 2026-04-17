@@ -21,6 +21,14 @@ import { ai4BharatASRApi } from "api/endpoints/ai"
 import { formatTime, isSilentAudio } from "pages/ShikshalokamVoiceChat/voiceToText"
 import { bot_routes } from "configure"
 
+const isIOSDevice = () => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false
+  }
+
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+}
+
 export default function Filters() {
   const globalSearchValue = useRepositoryStore(state => state.q)
 
@@ -79,7 +87,8 @@ export default function Filters() {
       if (!filtersRef.current) return
 
       const { top } = filtersRef.current.getBoundingClientRect()
-      setIsSticky(top <= 0)
+      const nextStickyState = top <= 0
+      setIsSticky(prev => (prev === nextStickyState ? prev : nextStickyState))
     }
 
     window.addEventListener("scroll", handleScroll)
@@ -96,7 +105,10 @@ export default function Filters() {
   function scrollToBrowseResources() {
     const browseSection = document.querySelector('[data-browse-resources]')
     if (browseSection) {
-      browseSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      browseSection.scrollIntoView({
+        behavior: isIOSDevice() ? "auto" : "smooth",
+        block: "start",
+      })
     }
   }
 
@@ -117,13 +129,13 @@ export default function Filters() {
 
     if (!!search && search?.length > 3) {
       setGlobalSearch(search)
-      scrollToBrowseResources()
+      setShouldScrollToTop(true)
     }
   }
 
   const handleChange = (key, value) => {
     setFilters({ [key]: value }, true)
-    scrollToBrowseResources()
+    setShouldScrollToTop(true)
   }
 
   const stopRecording = () => {
@@ -225,7 +237,7 @@ export default function Filters() {
                 } else {
                   setSearchInput(transcriptResult)
                   setGlobalSearch(transcriptResult)
-                  scrollToBrowseResources()
+                  setShouldScrollToTop(true)
                 }
               }
               setIsConvertingVoiceToText(false)
@@ -464,13 +476,18 @@ if (inpText.trim() === "" && search.trim() !== "") {
           <div className="flex flex-col items-start w-full h-[53px]">{searchInput}</div>
         </div> */}
 
-        {isSticky && (
-          <div className="flex justify-end ml-auto relative z-10 w-full lg:w-[25%] mt-7 lg:mt-0">
-            <div className="flex flex-col items-start w-full h-[53px]">
-              {searchInput}
-            </div>
+        <div
+          className={`flex justify-end ml-auto relative z-10 w-full lg:w-[25%] overflow-hidden transition-[max-height,margin,opacity] duration-150 ${
+            isSticky
+              ? "max-h-[53px] mt-7 opacity-100 visible"
+              : "max-h-0 mt-0 opacity-0 invisible pointer-events-none"
+          }`}
+          aria-hidden={!isSticky}
+        >
+          <div className="flex flex-col items-start w-full h-[53px]">
+            {searchInput}
           </div>
-        )}
+        </div>
       </div>
     </>
   )
